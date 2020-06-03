@@ -52,12 +52,13 @@ database::database()
     }
 }
 
-bool database::authenticate(QString password, QString mail)
+bool database::authenticate(QString password, QString mail, QString &name)
 {
-    QSqlQuery query("SELECT password FROM user WHERE mail LIKE :mail", db);
+    QSqlQuery query("SELECT password, name FROM user WHERE mail LIKE :mail", db);
     query.bindValue(":mail", mail);
     query.exec();
     QString storedPassword = query.boundValue("password").toString();
+    name = query.boundValue("name").toString();
     QCryptographicHash hash(QCryptographicHash::Sha256);
     hash.addData(password.toUtf8());
     if(QString(hash.result().toHex()) == storedPassword)
@@ -67,9 +68,24 @@ bool database::authenticate(QString password, QString mail)
     }
     else
         return false;
-
 }
+
 bool database::signup(QString user, QString mail, QString password)
 {
-
+    //We have to verify if an account with the email 'mail' already exists.
+    QSqlQuery query("SELECT count(*) FROM user WHERE mail LIKE :mail", db);
+    query.bindValue(":mail", mail);
+    query.exec();
+    if(query.boundValue("count(*)").toInt() > 0)
+    {
+        QSqlQuery secondQuery("INSERT INTO user (password, name, mail) VALUES (:password, :name, :mail);", db);
+        secondQuery.bindValue(":mail", mail);
+        secondQuery.bindValue(":name", user);
+        secondQuery.bindValue(":password", password);
+        secondQuery.exec();
+        return true;
+    }
+    else {
+        return false;
+    }
 }

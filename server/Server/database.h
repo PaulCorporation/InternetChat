@@ -6,7 +6,7 @@ class database
 {
 public:
     database();
-    bool authenticate(QString password, QString mail);
+    bool authenticate(QString password, QString mail, QString &name);
     bool signup(QString user, QString mail, QString password);
     QSqlDatabase db;
 };
