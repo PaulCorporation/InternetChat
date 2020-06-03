@@ -20,3 +20,15 @@ void app::newUser(QSslSocket * socket)
     m_users.insert(user(socket, nextId));
     ++nextId;
 }
+void app::flush(quint64 id)
+{
+    bool destroyed = false;
+    for(auto it = m_users.begin(); it != m_users.end() && !destroyed; ++it)
+    {
+        if(it->getId() == id)
+        {
+               destroyed = true;
+               m_users.erase(it);
+        }
+    }
+}
