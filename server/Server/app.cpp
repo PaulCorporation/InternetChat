@@ -11,33 +11,57 @@ app::app()
         qApp->quit();
     }
     qDebug() << "Ecoute sur le port " + QString::number(PORT);
-    QObject::connect(m_server, &sslServer::newPendingConnexion, this, &app::newUser);
+    QObject::connect(m_server, &QTcpServer::newConnection, this, &app::incomingConnection);
+
+}
+void app::incomingConnection()
+{
+    QTcpSocket *soc  = m_server->nextPendingConnection();
+
+    if(dynamic_cast<QSslSocket*>(soc))
+    {QSslSocket *socket =dynamic_cast<QSslSocket*>(soc);
+        qDebug() << "Nouvelle connexion.";
+        m_users.insert(new user(socket, nextId, &m_db));
+        bool done = false;
+        for(auto it = m_users.begin(); it != m_users.end() && !done; ++it)
+        {
+            if((*it)->getId() == nextId)
+            {
+              QObject::connect((*it), &user::requestToKill, this, &app::flush, Qt::DirectConnection);
+              QObject::connect((*it), &user::requestBroadcast, this, &app::broadcast);
+            }
+        }
+        ++nextId;
+    }
 }
 
-void app::newUser(QSslSocket * socket)
-{
-    qDebug() << "Nouvelle connexion.";
-    m_users.insert(user(socket, nextId, &m_db));
-    ++nextId;
-}
 void app::flush(quint64 id)
 {
+    qDebug() << QString("Deconnexion de l'utilisateur %1").arg(QString::number(id));
     bool destroyed = false;
-    for(auto it = m_users.begin(); it != m_users.end() && !destroyed; ++it)
+    user *to_delete =nullptr;
+    for(auto it = m_users.begin();!destroyed; ++it)
     {
-        if(it->getId() == id)
+        if((*it)->getId() == id)
         {
+               qDebug() << QString("Déconnexion de %1").arg(QString::number(id));
+               qDebug() << QString("%1 clients restants.").arg(QString::number(m_users.count()-1));
                destroyed = true;
-               m_users.erase(it);
+               user* to_delete = *it;
+
+
         }
     }
+    m_users.remove(to_delete);
+    delete(to_delete);
+    qDebug()  << "Deconnexion effectuée.";
 }
 void app::broadcast(message msg)
 {
     for(auto it = m_users.begin(); it != m_users.end(); ++it)
     {
 
-        it->sendMsg(msg);
+        (*it)->sendMsg(msg);
     }
 
 }

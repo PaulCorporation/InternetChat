@@ -12,14 +12,14 @@ class app : public QObject
 public:
     app();
 private :
-    QSet<user> m_users;
+    QSet<user*> m_users;
     sslServer *m_server;
     quint64 nextId=0; //For QSet hash-based array.
     database m_db;
 public slots :
-    void newUser(QSslSocket * socket);
     void flush(quint64); //flush(quint64) erase disconnected clients.
     void broadcast(message);
+    void incomingConnection();
 };
 
 #endif // APP_H

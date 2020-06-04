@@ -6,12 +6,9 @@ user ::user (QSslSocket *socket, quint64 id, database *db)
     m_id = id;
     QObject::connect(socket, &QSslSocket::disconnected, this,&user::kill, Qt::DirectConnection);
     connect( m_socket, qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error), this, &user::computeError);
-    connect(m_socket, &QAbstractSocket::readyRead, this,  &user::computePendingDatagram);
+    connect(socket, &QSslSocket::encrypted, this, &user::allow);
     m_db = db;
     in.setDevice(m_socket);
-}
-user ::~user ()
-{
 }
 user::user (const user& usr)
 {
@@ -38,6 +35,8 @@ bool user::operator==(const user& other) const
 }
 void user::kill()
 {
+
+    qDebug() << "Appel à requestToKill()";
     emit requestToKill(m_id); // requestToKill signal ask app to erase current user.
 }
 void user::computeError(QAbstractSocket::SocketError error)
@@ -46,6 +45,11 @@ void user::computeError(QAbstractSocket::SocketError error)
 }
 void user::computePendingDatagram()
 {
+    if(m_socket)
+    {
+
+
+    qDebug() << "Paquet recu";
     in.startTransaction();
     quint8 header = 0;
     in >> header;
@@ -60,7 +64,9 @@ void user::computePendingDatagram()
             case 1 :
                 {
                 request = new signupRequest;
-                *request << in;}
+                *request << in;
+                 qDebug() << "Requête d'incription reçue.";
+                }
             break;
             case 2 :
                 {
@@ -98,6 +104,8 @@ void user::computePendingDatagram()
                 break;
                 case 1:
                     {signupRequest *packet = static_cast<signupRequest*>(request);
+                    qDebug() << QString("User : %1").arg(packet->getUser());
+                    qDebug() << QString("Mail : %1").arg(packet->getMail());
                     bool success = m_db->signup(packet->getUser(),packet->getMail(), packet->getPassword());
                     if(success)
                         {
@@ -130,6 +138,9 @@ void user::computePendingDatagram()
     else {
        qDebug() << "Erreur de lecture.";
     }
+    delete request;
+
+    }
 }
 void user::sendMsg(message msg) const
 {
@@ -141,6 +152,11 @@ void user::sendMsg(message msg) const
 }
 void user::send(QByteArray &data) const
 {
+    if(m_socket)
     if(m_socket->write(data) == -1)
         qDebug()<< "Un problème est survenu pendant l'envoi d'un paquet";
+}
+void user::allow()
+{
+    connect(m_socket, &QAbstractSocket::readyRead, this,  &user::computePendingDatagram);
 }

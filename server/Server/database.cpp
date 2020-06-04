@@ -8,6 +8,7 @@
 #include <QCryptographicHash>
 #include <string>
 #include <QDataStream>
+#include <QSqlError>
 database::database()
 {
     db = QSqlDatabase::addDatabase("QMYSQL");
@@ -73,19 +74,30 @@ bool database::authenticate(QString password, QString mail, QString &name)
 bool database::signup(QString user, QString mail, QString password)
 {
     //We have to verify if an account with the email 'mail' already exists.
-    QSqlQuery query("SELECT count(*) FROM user WHERE mail LIKE :mail", db);
+    QSqlQuery query(db);
+    query.prepare("SELECT count(*) FROM user WHERE mail LIKE :mail;");
     query.bindValue(":mail", mail);
-    query.exec();
-    if(query.boundValue("count(*)").toInt() > 0)
+    if(!query.exec())
+        {QMessageLogger(qPrintable("database.cpp"), 6, qPrintable("QSqlQuery::exec()")).debug() << query.lastError().text();
+        qDebug () << query.lastQuery();
+        }
+    qDebug() << QString("Ecriture en base");
+    if(query.boundValue("count(*)").toInt() == 0)
     {
-        QSqlQuery secondQuery("INSERT INTO user (password, name, mail) VALUES (:password, :name, :mail);", db);
-        secondQuery.bindValue(":mail", mail);
-        secondQuery.bindValue(":name", user);
-        secondQuery.bindValue(":password", password);
-        secondQuery.exec();
+        qDebug()<<"Aucun autre user du même nom détecté.";
+        query.prepare("INSERT INTO user (password, name, mail) VALUES (:password, :name, :mail);");
+        query.bindValue(":mail", mail);
+        query.bindValue(":name", user);
+        QCryptographicHash hash(QCryptographicHash::Sha256);
+        hash.addData(password.toUtf8());
+        query.bindValue(":password", QString(hash.result().toHex()));
+        if(!query.exec())
+            QMessageLogger(qPrintable("database.cpp"), 6, qPrintable("QSqlQuery::exec()")).debug() << query.lastError().text();
+
         return true;
     }
     else {
+        qDebug() << "Un utilisateur utilise déjà cette adresse.";
         return false;
     }
 }
