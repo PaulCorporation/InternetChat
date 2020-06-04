@@ -3,11 +3,14 @@
 #include <QObject>
 #include <QSslSocket>
 #include <QHash>
+#include <QDataStream>
+#include "database.h"
+#include "packet.h"
 class user : public QObject
 {
 Q_OBJECT
 public:
-    user (QSslSocket *socket, quint64 id);
+    user (QSslSocket *socket, quint64 id, database *db);
     user (const user& usr);
     ~user ();
     QSslSocket* getSocket() const;
@@ -16,6 +19,19 @@ public:
 private:
     QSslSocket *m_socket;
     quint64 m_id = 0;
+    database *m_db;
+    QDataStream in;
+    QString m_nickname;
+    bool m_login;
+    void send(QByteArray&) const;
+public slots :
+    void kill();
+    void computeError(QAbstractSocket::SocketError error);
+    void computePendingDatagram();
+    void sendMsg(message) const;
+signals :
+    void requestToKill(quint64 id);
+    void requestBroadcast(message);
 };
 inline uint qHash(const user&usr) {
     return qHash(usr.getId());

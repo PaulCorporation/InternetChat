@@ -17,7 +17,7 @@ app::app()
 void app::newUser(QSslSocket * socket)
 {
     qDebug() << "Nouvelle connexion.";
-    m_users.insert(user(socket, nextId));
+    m_users.insert(user(socket, nextId, &m_db));
     ++nextId;
 }
 void app::flush(quint64 id)
@@ -31,4 +31,13 @@ void app::flush(quint64 id)
                m_users.erase(it);
         }
     }
+}
+void app::broadcast(message msg)
+{
+    for(auto it = m_users.begin(); it != m_users.end(); ++it)
+    {
+
+        it->sendMsg(msg);
+    }
+
 }

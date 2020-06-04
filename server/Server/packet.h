@@ -16,9 +16,13 @@ public:
     loginRequest();
     virtual void operator<<(QDataStream&) override;
     virtual void operator>>(QDataStream&) override;
+    void setMail(QString mail);
+    void setPassword(QString password);
+    QString getMail();
+    QString getPassword();
 private :
-    QString mail;
-    QString password;
+    QString m_mail;
+    QString m_password;
 };
 class signupRequest : public packet
 {
@@ -26,9 +30,15 @@ public:
     signupRequest();
     virtual void operator<<(QDataStream&) override;
     virtual void operator>>(QDataStream&) override;
-    QString user;
-    QString password;
-    QString mail;
+    void setMail(QString mail);
+    void setPassword(QString password);
+    void setUser(QString user);
+    QString getMail();
+    QString getPassword();
+    QString getUser();
+    QString m_user;
+    QString m_password;
+    QString m_mail;
 };
 class message : public packet
 {
@@ -36,7 +46,11 @@ public:
     message();
     virtual void operator<<(QDataStream&) override;
     virtual void operator>>(QDataStream&) override;
-    QString user;
-    QString content;
+    void setUser(QString user);
+    void setContent(QString content);
+    QString getUser();
+    QString getContent();
+    QString m_user;
+    QString m_content;
 };
 #endif // PACKET_H
