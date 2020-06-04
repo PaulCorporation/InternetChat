@@ -6,6 +6,9 @@
 #include "user.h"
 #include "sslserver.h"
 #include "database.h"
+/*app manage all clients, it is also the vertebral column of the program.
+app class contains all clients, and also manage clients deletion.
+For best performances, clients are stoked in a hash-based container.*/
 class app : public QObject
 {
     Q_OBJECT
@@ -14,10 +17,9 @@ public:
 private :
     QSet<user*> m_users;
     sslServer *m_server;
-    quint64 nextId=0; //For QSet hash-based array.
     database m_db;
 public slots :
-    void flush(quint64); //flush(quint64) erase disconnected clients.
+    void flush(user*); //flush(user*) erase disconnected clients.
     void broadcast(message);
     void incomingConnection();
 };

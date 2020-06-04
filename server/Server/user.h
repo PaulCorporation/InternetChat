@@ -6,18 +6,18 @@
 #include <QDataStream>
 #include "database.h"
 #include "packet.h"
+/*The user class work with the app class together, this class manage user-related communications by using
+ssl sockets.
+user class algo contains user-related data, like nickname.*/
 class user : public QObject
 {
 Q_OBJECT
 public:
-    user (QSslSocket *socket, quint64 id, database *db);
+    user (QSslSocket *socket, database *db);
     user (const user& usr);
     QSslSocket* getSocket() const;
-    quint64 getId() const;
-    bool operator==(const user& other) const;
 private:
     QSslSocket *m_socket;
-    quint64 m_id = 0;
     database *m_db;
     QDataStream in;
     QString m_nickname;
@@ -30,7 +30,7 @@ public slots :
     void sendMsg(message) const;
     void allow();
 signals :
-    void requestToKill(quint64 id);
+    void requestToKill(user*);
     void requestBroadcast(message);
 };
 /*inline uint qHash(const user&usr) {

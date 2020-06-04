@@ -1,9 +1,8 @@
 #include "user.h"
 #include <QDebug>
-user ::user (QSslSocket *socket, quint64 id, database *db)
+user ::user (QSslSocket *socket, database *db)
 {
     m_socket = socket;
-    m_id = id;
     QObject::connect(socket, &QSslSocket::disconnected, this,&user::kill, Qt::DirectConnection);
     connect( m_socket, qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error), this, &user::computeError);
     connect(socket, &QSslSocket::encrypted, this, &user::allow);
@@ -13,7 +12,6 @@ user ::user (QSslSocket *socket, quint64 id, database *db)
 user::user (const user& usr)
 {
     m_socket = usr.m_socket;
-    m_id = usr.m_id;
     m_nickname = usr.m_nickname;
     m_login = usr.m_login;
 }
@@ -21,23 +19,11 @@ QSslSocket* user::getSocket() const
 {
     return m_socket;
 }
-quint64 user::getId() const
-{
-    return m_id;
-}
-bool user::operator==(const user& other) const
-{
-    if(m_id == other.m_id)
-       return true;
-    else
-      return false;
-
-}
 void user::kill()
 {
 
     qDebug() << "Appel à requestToKill()";
-    emit requestToKill(m_id); // requestToKill signal ask app to erase current user.
+    emit requestToKill(this); // requestToKill signal ask app to erase current user.
 }
 void user::computeError(QAbstractSocket::SocketError error)
 {
@@ -127,9 +113,12 @@ void user::computePendingDatagram()
                 break;
                 case 2:
                      {
-                      message *packet = static_cast<message*>(request);
-                      packet->setUser(m_nickname); // Avoid autoset username glitch.
-                      emit requestBroadcast(*packet);
+                        if(m_login)
+                        {
+                            message *packet = static_cast<message*>(request);
+                            packet->setUser(m_nickname); // Avoid autoset username glitch.
+                            emit requestBroadcast(*packet);
+                        }
                      }
                 break;
             }

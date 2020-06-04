@@ -21,39 +21,17 @@ void app::incomingConnection()
     if(dynamic_cast<QSslSocket*>(soc))
     {QSslSocket *socket =dynamic_cast<QSslSocket*>(soc);
         qDebug() << "Nouvelle connexion.";
-        m_users.insert(new user(socket, nextId, &m_db));
-        bool done = false;
-        for(auto it = m_users.begin(); it != m_users.end() && !done; ++it)
-        {
-            if((*it)->getId() == nextId)
-            {
-              QObject::connect((*it), &user::requestToKill, this, &app::flush, Qt::DirectConnection);
-              QObject::connect((*it), &user::requestBroadcast, this, &app::broadcast);
-            }
-        }
-        ++nextId;
+        user *usr = new user(socket,&m_db);
+        QObject::connect(usr, &user::requestToKill, this, &app::flush, Qt::DirectConnection);
+        QObject::connect(usr, &user::requestBroadcast, this, &app::broadcast);
+        m_users.insert(usr);
     }
 }
 
-void app::flush(quint64 id)
+void app::flush(user* usr)
 {
-    qDebug() << QString("Deconnexion de l'utilisateur %1").arg(QString::number(id));
-    bool destroyed = false;
-    user *to_delete =nullptr;
-    for(auto it = m_users.begin();!destroyed; ++it)
-    {
-        if((*it)->getId() == id)
-        {
-               qDebug() << QString("Déconnexion de %1").arg(QString::number(id));
-               qDebug() << QString("%1 clients restants.").arg(QString::number(m_users.count()-1));
-               destroyed = true;
-               user* to_delete = *it;
-
-
-        }
-    }
-    m_users.remove(to_delete);
-    delete(to_delete);
+    m_users.remove(usr);
+    delete(usr);
     qDebug()  << "Deconnexion effectuée.";
 }
 void app::broadcast(message msg)

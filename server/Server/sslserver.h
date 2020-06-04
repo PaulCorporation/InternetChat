@@ -2,6 +2,9 @@
 #define SSLSERVER_H
 #include <QTcpServer>
 #include <QSslSocket>
+/*sslServer class intialize ssl communication by using the reimplemented
+ method incomingConnection, the sslServer class work as a standard TcpServer class with
+the pending connections system.*/
 class sslServer : public QTcpServer
 {
   Q_OBJECT

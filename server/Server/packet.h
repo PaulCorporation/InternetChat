@@ -1,6 +1,11 @@
 #ifndef PACKET_H
 #define PACKET_H
 #include <QDataStream>
+
+/*
+each classes here provide an easy interface for data serialization between clients and server.
+Each request reimplement the operator << and >> to directly serialize him components in a QDataStream
+*/
 class packet
 {
 public:

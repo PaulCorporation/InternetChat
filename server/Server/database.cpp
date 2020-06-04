@@ -75,8 +75,9 @@ bool database::signup(QString user, QString mail, QString password)
 {
     //We have to verify if an account with the email 'mail' already exists.
     QSqlQuery query(db);
-    query.prepare("SELECT count(*) FROM user WHERE mail LIKE :mail;");
+    query.prepare("SELECT count(*) FROM user WHERE mail LIKE :mail OR :name LIKE :name;");
     query.bindValue(":mail", mail);
+    query.bindValue(":name", user);
     if(!query.exec())
         {QMessageLogger(qPrintable("database.cpp"), 6, qPrintable("QSqlQuery::exec()")).debug() << query.lastError().text();
         qDebug () << query.lastQuery();
