@@ -12,4 +12,4 @@ Run 'install.sh' to compile this software!
 
 Don't forget to run libqt5sql5-mysql to install MYSQL plugin for the server.
 
-![alt text](https://gitlab-lepuy.iut-clermont.uca.fr/pachapuis/POO2/-/blob/master/test.png?raw=true)
+![](test.png)
