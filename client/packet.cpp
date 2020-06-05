@@ -6,20 +6,20 @@ packet::packet()
 }
 loginRequest::loginRequest() : packet()
 {
-    id=0;
+    id=static_cast<quint8>(packet_type::LOGIN_REQUEST);
 }
 signupRequest::signupRequest() : packet()
 {
-    id=1;
+    id=static_cast<quint8>(packet_type::SIGNUP_REQUEST);
 }
 message::message() : packet()
 {
-    id=2;
+    id=static_cast<quint8>(packet_type::MESSAGE);
 }
 
 void loginRequest::operator>>(QDataStream& s)
 {
-    s << quint8(0);
+    s << id;
     s << m_mail;
     s << m_password;
 }
@@ -46,7 +46,7 @@ QString loginRequest::getPassword()
 }
 void signupRequest::operator>>(QDataStream& s)
 {
-    s << quint8(1);
+    s << id;
     s << m_mail;
     s << m_password;
     s << m_user;
@@ -83,7 +83,7 @@ QString signupRequest::getUser()
 }
 void message::operator>>(QDataStream& s)
 {
-    s << quint8(2);
+    s << id;
     s << m_content;
     s << m_user;
 }
@@ -107,4 +107,36 @@ QString message::getUser()
 QString message::getContent()
 {
     return m_content;
+}
+listMembers::listMembers()
+{
+    id==static_cast<quint8>(packet_type::LIST);
+}
+void listMembers::operator<<(QDataStream& s)
+{
+    quint16 size;
+    s >> size;
+    for(unsigned int it = 0; it < size; ++it)
+    {
+    QString name;
+    s >> name;
+    m_names.push_back(name);
+    }
+}
+void listMembers::operator>>(QDataStream& s)
+{
+    s << id;
+    s << quint16(m_names.size());
+    for(auto it = m_names.begin(); it!= m_names.end(); ++it)
+    {
+    s << *it;
+    }
+}
+void listMembers::addMember(QString name)
+{
+    m_names.push_back(name);
+}
+QVector<QString> listMembers::getMembers()
+{
+    return m_names;
 }

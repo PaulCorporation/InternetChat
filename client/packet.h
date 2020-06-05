@@ -1,6 +1,17 @@
 #ifndef PACKET_H
 #define PACKET_H
 #include <QDataStream>
+#include <QVector>
+/*
+each classes here provide an easy interface for data serialization between clients and server.
+Each request reimplement the operator << and >> to directly serialize him components in a QDataStream
+*/
+
+enum class packet_type
+{
+    LOGIN_REQUEST =0, SIGNUP_REQUEST, MESSAGE, LOGIN_SUCCESFULL,SIGNUP_SUCCESFULL,LOGIN_FAILED, SIGNUP_FAILED, LIST
+};
+
 class packet
 {
 public:
@@ -52,5 +63,16 @@ public:
     QString getContent();
     QString m_user;
     QString m_content;
+};
+class listMembers : public packet
+{
+public:
+    listMembers();
+    virtual void operator<<(QDataStream&) override;
+    virtual void operator>>(QDataStream&) override;
+    void addMember(QString);
+    QVector<QString> getMembers();
+private:
+    QVector<QString> m_names;
 };
 #endif // PACKET_H
