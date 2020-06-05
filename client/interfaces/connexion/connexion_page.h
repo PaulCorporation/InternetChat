@@ -16,8 +16,11 @@ public:
 
 private slots:
     void on_create_clicked();
+    void on_connect_clicked();
+
 signals :
     void requestAccountCreationPage();
+    void requestLogin(QString, QString);
 private:
     Ui::connexion *ui_connexion_page;
 };

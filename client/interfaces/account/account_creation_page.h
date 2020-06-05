@@ -14,8 +14,11 @@ public:
     ~account_creation_page();
 private slots:
     void on_return_2_clicked();
+    void on_validate_clicked();
+
 signals:
     void requestConnexionPage();
+    void requestSignup(QString, QString, QString);
 private:
     Ui::create_account *ui_account_creation_page;
 };
