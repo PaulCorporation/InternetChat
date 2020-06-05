@@ -24,6 +24,7 @@ void app::incomingConnection()
         user *usr = new user(socket,&m_db);
         QObject::connect(usr, &user::requestToKill, this, &app::flush, Qt::DirectConnection);
         QObject::connect(usr, &user::requestBroadcast, this, &app::broadcast);
+        QObject::connect(usr, &user::refreshList, this, &app::broadCastListNames);
         m_users.insert(usr);
     }
 }
@@ -36,10 +37,27 @@ void app::flush(user* usr)
 }
 void app::broadcast(message msg)
 {
+    qDebug() << "Broadcasting";
     for(auto it = m_users.begin(); it != m_users.end(); ++it)
     {
 
         (*it)->sendMsg(msg);
     }
 
+}
+void app::broadCastListNames()
+{
+    listMembers list;
+    for(auto it = m_users.begin(); it !=m_users.end(); ++it)
+    {
+    if((*it)->isLoged())
+    list.addMember((*it)->getNickname());
+    }
+    for(auto it = m_users.begin(); it !=m_users.end(); ++it)
+    {
+     if((*it)->isLoged())
+     {
+        (*it)->sendList(list);
+     }
+    }
 }

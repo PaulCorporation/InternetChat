@@ -108,3 +108,35 @@ QString message::getContent()
 {
     return m_content;
 }
+listMembers::listMembers()
+{
+    id=7;
+}
+void listMembers::operator<<(QDataStream& s)
+{
+    quint16 size;
+    s >> size;
+    for(unsigned int it = 0; it < size; ++it)
+    {
+    QString name;
+    s >> name;
+    m_names.push_back(name);
+    }
+}
+void listMembers::operator>>(QDataStream& s)
+{
+    s << quint8(id);
+    s << quint16(m_names.size());
+    for(auto it = m_names.begin(); it!= m_names.end(); ++it)
+    {
+    s << *it;
+    }
+}
+void listMembers::addMember(QString name)
+{
+    m_names.push_back(name);
+}
+QVector<QString> listMembers::getMembers()
+{
+    return m_names;
+}

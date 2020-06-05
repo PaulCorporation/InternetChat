@@ -22,6 +22,7 @@ public slots :
     void flush(user*); //flush(user*) erase disconnected clients.
     void broadcast(message);
     void incomingConnection();
+    void broadCastListNames();
 };
 
 #endif // APP_H

@@ -16,6 +16,8 @@ public:
     user (QSslSocket *socket, database *db);
     user (const user& usr);
     QSslSocket* getSocket() const;
+    bool isLoged() const;
+    QString getNickname() const;
 private:
     QSslSocket *m_socket;
     database *m_db;
@@ -28,10 +30,12 @@ public slots :
     void computeError(QAbstractSocket::SocketError error);
     void computePendingDatagram();
     void sendMsg(message) const;
+    void sendList(listMembers&) const;
     void allow();
 signals :
     void requestToKill(user*);
     void requestBroadcast(message);
+    void refreshList();
 };
 /*inline uint qHash(const user&usr) {
     return qHash(usr.getId());

@@ -4,8 +4,11 @@ user ::user (QSslSocket *socket, database *db)
 {
     m_socket = socket;
     QObject::connect(socket, &QSslSocket::disconnected, this,&user::kill, Qt::DirectConnection);
+    QObject::connect(socket, &QSslSocket::disconnected, this,&user::refreshList);
     connect( m_socket, qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error), this, &user::computeError);
-    connect(socket, &QSslSocket::encrypted, this, &user::allow);
+    if(m_socket->isEncrypted())
+        user::allow();
+    connect(m_socket, &QSslSocket::encrypted, this, &user::allow);
     m_db = db;
     in.setDevice(m_socket);
 }
@@ -31,31 +34,36 @@ void user::computeError(QAbstractSocket::SocketError error)
 }
 void user::computePendingDatagram()
 {
+    while(m_socket->bytesAvailable()>0)
+    {
     if(m_socket)
     {
 
 
     qDebug() << "Paquet recu";
     in.startTransaction();
-    quint8 header = 0;
-    in >> header;
+    quint8 header8bit = 0;
+    in >> header8bit;
+    packet_type header = static_cast<packet_type>(header8bit);
     packet * request = nullptr;
     switch(header)
         {
-            case 0:
+            case packet_type::LOGIN_REQUEST:
                 {
+                qDebug() << "Requête de login reçue.";
                 request = new loginRequest;
                 *request << in;}
             break;
-            case 1 :
+            case ::packet_type::SIGNUP_REQUEST :
                 {
                 request = new signupRequest;
                 *request << in;
                  qDebug() << "Requête d'incription reçue.";
                 }
             break;
-            case 2 :
+            case packet_type::MESSAGE :
                 {
+                  qDebug() << "Message recu";
                  request = new message;
                 *request << in;}
             break;
@@ -66,7 +74,7 @@ void user::computePendingDatagram()
         switch(header)
             {
 
-                case 0:
+                case packet_type::LOGIN_REQUEST:
                     {
                      loginRequest *packet = static_cast<loginRequest*>(request);
                      bool success = m_db->authenticate(packet->getPassword(),packet->getMail(), m_nickname);
@@ -81,14 +89,26 @@ void user::computePendingDatagram()
                             {
                             QByteArray data;
                             QDataStream out(&data, QIODevice::WriteOnly);
-                            quint8 flag (3);
+                            quint8 flag =static_cast<quint8>(packet_type::LOGIN_SUCCESFULL);
                             out << flag;
                             send(data);
+                            emit refreshList();
                             }
+                     }
+                     else {
+
+                         {
+                         QByteArray data;
+                         QDataStream out(&data, QIODevice::WriteOnly);
+                         quint8 flag =static_cast<quint8>(packet_type::LOGIN_FAILED);
+                         out << flag;
+                         send(data);
+                         }
+                         qDebug() << "Echec de l'authentification";
                      }
                     }
                 break;
-                case 1:
+                case packet_type::SIGNUP_REQUEST:
                     {signupRequest *packet = static_cast<signupRequest*>(request);
                     qDebug() << QString("User : %1").arg(packet->getUser());
                     qDebug() << QString("Mail : %1").arg(packet->getMail());
@@ -96,6 +116,7 @@ void user::computePendingDatagram()
                     if(success)
                         {
                         m_login = true;
+                        m_nickname = packet->getUser();
                         qDebug() << QString("L'utilisateur %1 a été ajouté à la base").arg(packet->getUser());
                         /*TODO
                         We have to say to the user that his account was successfuly created.
@@ -104,19 +125,30 @@ void user::computePendingDatagram()
                             {
                             QByteArray data;
                             QDataStream out(&data, QIODevice::WriteOnly);
-                            quint8 flag (4);
+                            quint8 flag =static_cast<quint8>(packet_type::SIGNUP_SUCCESFULL);
                             out << flag;
                             send(data);
                             }
+                            emit refreshList();
+                        }
+                    else {
+                        {
+                        QByteArray data;
+                        QDataStream out(&data, QIODevice::WriteOnly);
+                        quint8 flag =static_cast<quint8>(packet_type::SIGNUP_FAILED);
+                        out << flag;
+                        send(data);
                         }
                     }
+                    }
                 break;
-                case 2:
+                case packet_type::MESSAGE:
                      {
                         if(m_login)
                         {
                             message *packet = static_cast<message*>(request);
                             packet->setUser(m_nickname); // Avoid autoset username glitch.
+                            qDebug() << QString("Contenu : %1").arg(packet->getContent());
                             emit requestBroadcast(*packet);
                         }
                      }
@@ -130,14 +162,17 @@ void user::computePendingDatagram()
     delete request;
 
     }
+    }
 }
 void user::sendMsg(message msg) const
 {
+    if(m_login && m_socket)
+    {
     QByteArray data;
     QDataStream out(&data, QIODevice::WriteOnly);
     msg >> out;
     send(data);
-
+    }
 }
 void user::send(QByteArray &data) const
 {
@@ -149,3 +184,21 @@ void user::allow()
 {
     connect(m_socket, &QAbstractSocket::readyRead, this,  &user::computePendingDatagram);
 }
+void user::sendList(listMembers& list) const
+{
+    if(m_login && m_socket)
+    {
+    QByteArray data;
+    QDataStream out(&data, QIODevice::WriteOnly);
+    list >> out;
+    send(data);
+    }
+}
+bool user::isLoged() const
+    {
+    return m_login;
+}
+ QString user::getNickname() const
+ {
+   return m_nickname;
+ }
