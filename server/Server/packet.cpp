@@ -110,7 +110,7 @@ QString message::getContent()
 }
 listMembers::listMembers()
 {
-    id==static_cast<quint8>(packet_type::LIST);
+    id=static_cast<quint8>(packet_type::LIST);
 }
 void listMembers::operator<<(QDataStream& s)
 {
