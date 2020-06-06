@@ -12,12 +12,13 @@
 #include <QSqlResult>
 database::database()
 {
+    qDebug() << "Connection à la base de données.";
     db = QSqlDatabase::addDatabase("QMYSQL");
     QString hostname;
     QString dbname;
     QString user;
     QString password;
-    QFile file ("id.xml");
+    QFile file ("/etc/id.xml");
     if(!file.open(QIODevice::ReadOnly))
     {
         QMessageLogger(qPrintable("database.cpp"), 13, qPrintable("QFile::open(QIODevice::ReadOnly)")).debug() << "Impossible d'ouvrir le fichier 'id.txt' en lecture.";
@@ -52,8 +53,18 @@ database::database()
         QMessageLogger(qPrintable("database.cpp"), 44, qPrintable("QSqlDatabase::open()")).debug() << "Impossible de se connecter à a base de données.";
         qApp->quit();
     }
+m_timer.setInterval(20000000);
+QObject::connect(&m_timer, &QTimer::timeout, this, &database::connectDb); // to avoid connection timeout problems.
+m_timer.start();
 }
-
+bool database::connectDb()
+{
+    if(!db.open())
+    {
+        QMessageLogger(qPrintable("database.cpp"), 44, qPrintable("QSqlDatabase::open()")).debug() << "Impossible de se connecter à a base de données.";
+        qApp->quit();
+    }
+}
 bool database::authenticate(QString password, QString mail, QString &name)
 {
     qDebug() << QString("Tentative de connexion de %1").arg(mail);
